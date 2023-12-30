@@ -27,6 +27,7 @@ struct genome_token {
         }
     }
 
+
     static std::vector<genome_token> all_tokens;
 };
 
@@ -39,17 +40,21 @@ struct repeat_scout {
                                             genome.begin() + exact_repeat_pos.front() + exact_repeat_size);
 
         g.resize(exact_repeat_pos.size());
+        best_seq_score.resize(exact_repeat_pos.size());
+        best_right_border.resize(exact_repeat_pos.size());
         for (std::size_t i = 0; i < exact_repeat_pos.size(); i++) {
             g[i].resize(2);
+
+            best_right_border[i] = exact_repeat_pos[i] + exact_repeat_size;
 
             g[i][0].resize(2 * conf.max_offset + 1);
             for (int64_t offset = -conf.max_offset; offset <= 0; offset++) {
                 g[i][0][offset + conf.max_offset] = -conf.gap_penalty * offset + exact_repeat_size * conf.match;
-                best_seq_score[i] = std::max(best_seq_score[i], g[i][0][offset]);
+                best_seq_score[i] = std::max(best_seq_score[i], g[i][0][offset+ conf.max_offset]);
             }
             for (int64_t offset = 0; offset <= conf.max_offset; offset++) {
                 g[i][0][offset + conf.max_offset] = conf.gap_penalty * offset + exact_repeat_size * conf.match;
-                best_seq_score[i] = std::max(best_seq_score[i], g[i][0][offset]);
+                best_seq_score[i] = std::max(best_seq_score[i], g[i][0][offset+ conf.max_offset]);
             }
             g[i][1] = g[i][0];
         }
@@ -61,12 +66,12 @@ struct repeat_scout {
             int64_t best_total_score = INT64_MIN;
 
             for (const auto& new_token: genome_token::all_tokens) {
-                int64_t total_score = INT64_MIN;
+                int64_t total_score = 0;
                 for (auto n = 0; n < exact_repeat_pos.size(); n++) {
                     auto best_n_score = best_seq_score[n] + conf.cap_penalty;
                     for (int64_t offset = -conf.max_offset; offset <= conf.max_offset; offset++) {
                         auto temp_score = calc_score_right(y, n, offset, new_token);
-                        best_n_score += std::max(best_n_score, temp_score);
+                        best_n_score = std::max(best_n_score, temp_score);
                     }
                     total_score += best_n_score;
                 }
@@ -76,14 +81,40 @@ struct repeat_scout {
                 }
             }
             right_q.push_back(best_new_token);
+
+            //recalc best_seq_score
+            for(size_t n=0;n<exact_repeat_size;n++) {
+                for (int64_t offset = -conf.max_offset; offset <= conf.max_offset; offset++) {
+                    auto temp_score = calc_score_right(y, n, offset, best_new_token);
+                    if(temp_score > best_seq_score[n]) {
+                        best_seq_score[n] = temp_score;
+                        best_right_border[n] = exact_repeat_pos[n] + exact_repeat_size + y;
+                    }
+                }
+            }
+            //rcalc g
+
+            for (auto n = 0; n < exact_repeat_pos.size(); n++) {
+                for (int64_t offset = -conf.max_offset; offset <= conf.max_offset; offset++) {
+                    g[n][y%2][offset + conf.max_offset] = calc_score_right(y, n, offset, best_new_token);
+                }
+            }
+
         }
+
     }
 
     void extend_left() {
         std::reverse(right_q.begin(), right_q.end());
         std::reverse(genome.begin(), genome.end());
 
-
+        for(auto& pos: exact_repeat_pos) {
+            pos = genome.size()-(pos+exact_repeat_size);
+        }
+        extend_right();
+        for(auto& pos: exact_repeat_pos) {
+            pos = genome.size()-(pos+exact_repeat_size);
+        }
 
         std::reverse(right_q.begin(), right_q.end());
         std::reverse(genome.begin(), genome.end());
@@ -91,16 +122,16 @@ struct repeat_scout {
 
     [[nodiscard]] int64_t calc_score_right(const std::size_t y, const std::size_t n, const int64_t offset,
                              const genome_token new_token) const  {
-        int64_t max_g = g[n][(y - 1) % 2][offset] + new_token.calc_mu(
+        int64_t max_g = g[n][(y + 1) % 2][offset+conf.max_offset] + new_token.calc_mu(
                             genome[exact_repeat_pos[n] + exact_repeat_size + y - offset], conf.match, conf.mismatch);
 
         for (int64_t k = 1; offset + k <= conf.max_offset; k++) {
             //k in range [1; b - offset]
-            max_g = std::max(max_g, g[n][(y - 1) % 2][offset + k]) - k * conf.gap_penalty + new_token.calc_mu(
+            max_g = std::max(max_g, g[n][(y + 1) % 2][offset + k+conf.max_offset] + k * conf.gap_penalty + new_token.calc_mu(
                         genome[exact_repeat_pos[n] + exact_repeat_size + y - offset], conf.match,
-                        conf.mismatch);
+                        conf.mismatch));
 
-            max_g = std::max(max_g, g[n][(y - 1) % 2][offset + k - 1] - (k + 1) * conf.gap_penalty);
+            max_g = std::max(max_g, g[n][(y + 1) % 2][offset + k - 1+conf.max_offset] + (k + 1) * conf.gap_penalty);
         }
         return max_g;
     }
@@ -108,6 +139,8 @@ struct repeat_scout {
     const config conf;
     std::vector<std::size_t> exact_repeat_pos;
     std::vector<genome_token> genome;
+    std::vector<std::size_t> best_right_border;
+    std::vector<std::size_t> best_left_border;
     std::vector<genome_token> right_q;
     int64_t exact_repeat_size;
     std::vector<std::vector<std::vector<int64_t>>> g;
