@@ -84,12 +84,12 @@ struct repeat_scout {
             right_q.push_back(best_new_token);
 
             //recalc best_seq_score
-            for (size_t n = 0; n < exact_repeat_size; n++) {
+            for (size_t n = 0; n < exact_repeat_pos.size(); n++) {
                 for (int64_t offset = -conf.max_offset; offset <= conf.max_offset; offset++) {
                     auto temp_score = calc_score_right(y, n, offset, best_new_token);
                     if (temp_score > best_seq_score[n]) {
                         best_seq_score[n] = temp_score;
-                        best_right_border[n] = exact_repeat_pos[n] + exact_repeat_size + y;
+                        best_right_border[n] = exact_repeat_pos[n] + exact_repeat_size + y - offset;
                     }
                 }
             }
@@ -102,12 +102,21 @@ struct repeat_scout {
             }
         }
 
+        std::cout << "Printing answer...\n";
         for(auto x: right_q) {
             std::cout << x.c;
         }
         std::cout << std::endl;
 
+
+        std::vector<genome_token> tst(genome.begin()+1711408, genome.begin()+1711408+100);
+        for(auto x: tst) {
+            std::cout << x.c;
+        }
+        std::cout << std::endl;
+
         for (int i = 0; i < exact_repeat_pos.size(); i++) {
+            std::cout << i << ": ";
             for (int64_t x = exact_repeat_pos[i]; x <= best_right_border[i]; x++) {
                 std::cout << genome[x].c;
             }

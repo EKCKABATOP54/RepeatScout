@@ -44,7 +44,7 @@ int main() {
         poses.push_back(x);
         fs2 >> s;
     }
-
+/*
     for(auto pos: poses) {
         std::vector<genome_token> rp(genome.begin()+pos, genome.begin()+ pos + 10);
         for(auto xx:rp){
@@ -52,6 +52,7 @@ int main() {
         }
         std::cout << std::endl;
     }
+    */
 
 //ACCAGCCTGGCC
     repeat_scout rs(9, c, genome, poses);
