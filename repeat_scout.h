@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <algorithm>
+#include <iostream>
 #include <sys/types.h>
 
 
@@ -50,11 +51,11 @@ struct repeat_scout {
             g[i][0].resize(2 * conf.max_offset + 1);
             for (int64_t offset = -conf.max_offset; offset <= 0; offset++) {
                 g[i][0][offset + conf.max_offset] = -conf.gap_penalty * offset + exact_repeat_size * conf.match;
-                best_seq_score[i] = std::max(best_seq_score[i], g[i][0][offset+ conf.max_offset]);
+                best_seq_score[i] = std::max(best_seq_score[i], g[i][0][offset + conf.max_offset]);
             }
             for (int64_t offset = 0; offset <= conf.max_offset; offset++) {
                 g[i][0][offset + conf.max_offset] = conf.gap_penalty * offset + exact_repeat_size * conf.match;
-                best_seq_score[i] = std::max(best_seq_score[i], g[i][0][offset+ conf.max_offset]);
+                best_seq_score[i] = std::max(best_seq_score[i], g[i][0][offset + conf.max_offset]);
             }
             g[i][1] = g[i][0];
         }
@@ -83,10 +84,10 @@ struct repeat_scout {
             right_q.push_back(best_new_token);
 
             //recalc best_seq_score
-            for(size_t n=0;n<exact_repeat_size;n++) {
+            for (size_t n = 0; n < exact_repeat_size; n++) {
                 for (int64_t offset = -conf.max_offset; offset <= conf.max_offset; offset++) {
                     auto temp_score = calc_score_right(y, n, offset, best_new_token);
-                    if(temp_score > best_seq_score[n]) {
+                    if (temp_score > best_seq_score[n]) {
                         best_seq_score[n] = temp_score;
                         best_right_border[n] = exact_repeat_pos[n] + exact_repeat_size + y;
                     }
@@ -96,24 +97,35 @@ struct repeat_scout {
 
             for (auto n = 0; n < exact_repeat_pos.size(); n++) {
                 for (int64_t offset = -conf.max_offset; offset <= conf.max_offset; offset++) {
-                    g[n][y%2][offset + conf.max_offset] = calc_score_right(y, n, offset, best_new_token);
+                    g[n][y % 2][offset + conf.max_offset] = calc_score_right(y, n, offset, best_new_token);
                 }
             }
-
         }
 
+        for(auto x: right_q) {
+            std::cout << x.c;
+        }
+        std::cout << std::endl;
+
+        for (int i = 0; i < exact_repeat_pos.size(); i++) {
+            for (int64_t x = exact_repeat_pos[i]; x <= best_right_border[i]; x++) {
+                std::cout << genome[x].c;
+            }
+            std::cout << '\n';
+            //std::cout << exact_repeat_pos[i] << '\t' << best_right_border[i] << '\n';
+        }
     }
 
     void extend_left() {
         std::reverse(right_q.begin(), right_q.end());
         std::reverse(genome.begin(), genome.end());
 
-        for(auto& pos: exact_repeat_pos) {
-            pos = genome.size()-(pos+exact_repeat_size);
+        for (auto& pos: exact_repeat_pos) {
+            pos = genome.size() - (pos + exact_repeat_size);
         }
         extend_right();
-        for(auto& pos: exact_repeat_pos) {
-            pos = genome.size()-(pos+exact_repeat_size);
+        for (auto& pos: exact_repeat_pos) {
+            pos = genome.size() - (pos + exact_repeat_size);
         }
 
         std::reverse(right_q.begin(), right_q.end());
@@ -121,17 +133,18 @@ struct repeat_scout {
     }
 
     [[nodiscard]] int64_t calc_score_right(const std::size_t y, const std::size_t n, const int64_t offset,
-                             const genome_token new_token) const  {
-        int64_t max_g = g[n][(y + 1) % 2][offset+conf.max_offset] + new_token.calc_mu(
+                                           const genome_token new_token) const {
+        int64_t max_g = g[n][(y + 1) % 2][offset + conf.max_offset] + new_token.calc_mu(
                             genome[exact_repeat_pos[n] + exact_repeat_size + y - offset], conf.match, conf.mismatch);
 
         for (int64_t k = 1; offset + k <= conf.max_offset; k++) {
             //k in range [1; b - offset]
-            max_g = std::max(max_g, g[n][(y + 1) % 2][offset + k+conf.max_offset] + k * conf.gap_penalty + new_token.calc_mu(
-                        genome[exact_repeat_pos[n] + exact_repeat_size + y - offset], conf.match,
-                        conf.mismatch));
+            max_g = std::max(
+                max_g, g[n][(y + 1) % 2][offset + k + conf.max_offset] + k * conf.gap_penalty + new_token.calc_mu(
+                           genome[exact_repeat_pos[n] + exact_repeat_size + y - offset], conf.match,
+                           conf.mismatch));
 
-            max_g = std::max(max_g, g[n][(y + 1) % 2][offset + k - 1+conf.max_offset] + (k + 1) * conf.gap_penalty);
+            max_g = std::max(max_g, g[n][(y + 1) % 2][offset + k - 1 + conf.max_offset] + (k + 1) * conf.gap_penalty);
         }
         return max_g;
     }
