@@ -37,7 +37,9 @@ struct repeat_scout {
                  std::vector<std::size_t> exact_repeat_pos_) : conf(c_), exact_repeat_pos(std::move(exact_repeat_pos_)),
                                                                genome(std::move(genome_)),
                                                                exact_repeat_size(exact_repeat_size_) {
-        right_q = std::vector<genome_token>(genome.begin() + exact_repeat_pos.front(),
+    }
+
+    void init_right() {right_q = std::vector<genome_token>(genome.begin() + exact_repeat_pos.front(),
                                             genome.begin() + exact_repeat_pos.front() + exact_repeat_size);
 
         g.resize(exact_repeat_pos.size());
@@ -59,9 +61,11 @@ struct repeat_scout {
             }
             g[i][1] = g[i][0];
         }
+
     }
 
     void extend_right() {
+        init_right();
         for (auto y = 0; y < conf.max_extend_len; y++) {
             auto best_new_token = genome_token::all_tokens.front();
             int64_t best_total_score = INT64_MIN;
@@ -102,42 +106,57 @@ struct repeat_scout {
             }
         }
 
-        std::cout << "Printing answer...\n";
-        for(auto x: right_q) {
-            std::cout << x.c;
-        }
-        std::cout << std::endl;
-
-
-        std::vector<genome_token> tst(genome.begin()+1711408, genome.begin()+1711408+100);
-        for(auto x: tst) {
-            std::cout << x.c;
-        }
-        std::cout << std::endl;
-
-        for (int i = 0; i < exact_repeat_pos.size(); i++) {
-            std::cout << i << ": ";
-            for (int64_t x = exact_repeat_pos[i]; x <= best_right_border[i]; x++) {
-                std::cout << genome[x].c;
+        if(0) {
+            std::cout << "Printing answer...\n";
+            for(auto x: right_q) {
+                std::cout << x.c;
             }
-            std::cout << '\n';
-            //std::cout << exact_repeat_pos[i] << '\t' << best_right_border[i] << '\n';
+            std::cout << std::endl;
+
+
+            std::vector<genome_token> tst(genome.begin()+1711408, genome.begin()+1711408+100);
+            for(auto x: tst) {
+                std::cout << x.c;
+            }
+            std::cout << std::endl;
+
+            for (int i = 0; i < exact_repeat_pos.size(); i++) {
+                std::cout << i << ": ";
+                for (int64_t x = exact_repeat_pos[i]; x <= best_right_border[i]; x++) {
+                    std::cout << genome[x].c;
+                }
+                std::cout << '\n';
+                //std::cout << exact_repeat_pos[i] << '\t' << best_right_border[i] << '\n';
+            }
         }
     }
 
     void extend_left() {
-        std::reverse(right_q.begin(), right_q.end());
+
+        auto const old_best_right_border = best_right_border;
+        auto const old_right_q = right_q;
+
         std::reverse(genome.begin(), genome.end());
 
         for (auto& pos: exact_repeat_pos) {
             pos = genome.size() - (pos + exact_repeat_size);
         }
         extend_right();
+
+        best_left_border = best_right_border;
+        for(auto& pos :best_left_border) {
+            pos = genome.size()-pos-1;
+        }
+        left_q = right_q;
+        std::reverse(left_q.begin(), left_q.end());
+
+        right_q = old_right_q;
+        best_right_border = old_best_right_border;
+
         for (auto& pos: exact_repeat_pos) {
             pos = genome.size() - (pos + exact_repeat_size);
         }
 
-        std::reverse(right_q.begin(), right_q.end());
         std::reverse(genome.begin(), genome.end());
     }
 
@@ -164,6 +183,7 @@ struct repeat_scout {
     std::vector<std::size_t> best_right_border;
     std::vector<std::size_t> best_left_border;
     std::vector<genome_token> right_q;
+    std::vector<genome_token> left_q;
     int64_t exact_repeat_size;
     std::vector<std::vector<std::vector<int64_t>>> g;
     std::vector<int64_t> best_seq_score;
