@@ -165,7 +165,7 @@ struct repeat_scout {
         int64_t max_g = g[n][(y + 1) % 2][offset + conf.max_offset] + new_token.calc_mu(
                             genome[exact_repeat_pos[n] + exact_repeat_size + y - offset], conf.match, conf.mismatch);
 
-        for (int64_t k = 1; offset + k <= conf.max_offset; k++) {
+        for (int64_t k = 0; offset + k <= conf.max_offset; k++) {
             //k in range [1; b - offset]
             max_g = std::max(
                 max_g, g[n][(y + 1) % 2][offset + k + conf.max_offset] + k * conf.gap_penalty + new_token.calc_mu(
@@ -174,6 +174,9 @@ struct repeat_scout {
 
             max_g = std::max(max_g, g[n][(y + 1) % 2][offset + k - 1 + conf.max_offset] + (k + 1) * conf.gap_penalty);
         }
+        //k = conf.max_offset-offset+1
+            max_g = std::max(max_g, g[n][(y + 1) % 2][ conf.max_offset] + ((conf.max_offset - offset +  1) + 1) * conf.gap_penalty);
+
         return max_g;
     }
 

@@ -3,13 +3,16 @@
 #include <fstream>
 
 int main() {
+    std::ofstream outFile("aboba.txt");
+    //std::cout.rdbuf(outFile.rdbuf());
+    std::iostream::sync_with_stdio(false);
     config c;
-    c.max_offset = 20;
-    c.gap_penalty = -5;
-    c.cap_penalty = -20;
+    c.max_offset = 5;
+    c.gap_penalty = -1;
+    c.cap_penalty = -5;
     c.match = 1;
     c.mismatch = -1;
-    c.max_extend_len = 1000;
+    c.max_extend_len = 500;
 
 
     std::string genome_file = "/home/androposh/CLionProjects/RepeatScout/humanFormattedUppercase.fa";
