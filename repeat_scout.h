@@ -41,10 +41,9 @@ struct repeat_scout {
 
     void init_right() {right_q = std::vector<genome_token>(genome.begin() + exact_repeat_pos.front(),
                                             genome.begin() + exact_repeat_pos.front() + exact_repeat_size);
-
-        g.resize(exact_repeat_pos.size());
-        best_seq_score.resize(exact_repeat_pos.size());
-        best_right_border.resize(exact_repeat_pos.size());
+        g = std::vector<std::vector<std::vector<int64_t>>>(exact_repeat_pos.size());
+        best_seq_score = std::vector<int64_t>(exact_repeat_pos.size());
+        best_right_border = std::vector<std::size_t>(exact_repeat_pos.size());
         for (std::size_t i = 0; i < exact_repeat_pos.size(); i++) {
             g[i].resize(2);
 
