@@ -17,7 +17,28 @@ struct config {
     std::size_t max_extend_len;
 };
 
-struct genome_token {
+
+#if 1
+class genome_token {
+public:
+    [[nodiscard]] int64_t calc_mu(const genome_token& t, int64_t match, int64_t mismatch) const {
+
+    }
+
+    std::string to_string() {
+
+    }
+
+    static std::vector<genome_token>& get_ll_tokens() {
+        static std::vector<genome_token>
+        return
+    }
+private:
+    std::vector<char> token_value;
+
+};
+#else
+struct char genome_token {
     char c = 0;
 
     [[nodiscard]] int64_t calc_mu(const genome_token& t, const int64_t match, const int64_t mismatch) const {
@@ -28,9 +49,14 @@ struct genome_token {
         }
     }
 
+    std::string to_string() {
+     return std::string(1, c);
+    }
+
 
     static std::vector<genome_token> all_tokens;
 };
+#endif
 
 struct repeat_scout {
     repeat_scout(const int64_t exact_repeat_size_, const config& c_, std::vector<genome_token> genome_,
@@ -66,10 +92,10 @@ struct repeat_scout {
     void extend_right() {
         init_right();
         for (auto y = 0; y < conf.max_extend_len; y++) {
-            auto best_new_token = genome_token::all_tokens.front();
+            auto best_new_token = genome_token::get_ll_tokens().front();
             int64_t best_total_score = INT64_MIN;
 
-            for (const auto& new_token: genome_token::all_tokens) {
+            for (const auto& new_token: genome_token::get_ll_tokens()) {
                 int64_t total_score = 0;
                 for (auto n = 0; n < exact_repeat_pos.size(); n++) {
                     auto best_n_score = best_seq_score[n] + conf.cap_penalty;
