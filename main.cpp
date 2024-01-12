@@ -2,43 +2,25 @@
 #include "repeat_scout.h"
 #include <fstream>
 
-int main() {
-    std::ofstream outFile("aboba.txt");
-    //std::cout.rdbuf(outFile.rdbuf());
-    std::iostream::sync_with_stdio(false);
-    config c;
-    c.max_offset = 5;
-    c.gap_penalty = -1;
-    c.cap_penalty = -5;
-    c.match = 1;
-    c.mismatch = -1;
-    c.max_extend_len = 500;
-
-
-    std::string genome_file = "/home/androposh/CLionProjects/RepeatScout/humanFormattedUppercase.fa";
+bool read_genome_from_file(const std::string& genome_file, std::vector<genome_token>& genome) {
     std::ifstream fs(genome_file);
 
     if (!fs.is_open()) {
         std::cerr << "Unable to open file: " << genome_file << std::endl;
-        return 1; // return an error code
+        return false;
     }
 
-    // Read the contents of the file into a string
-    std::vector<genome_token> genome((std::istreambuf_iterator<char>(fs)),
+    genome = std::vector<genome_token> ((std::istreambuf_iterator<char>(fs)),
                                      (std::istreambuf_iterator<char>()));
 
-    // Close the file
-    fs.close();
+    return true;
+}
 
-    std::vector<size_t> poses;
-
-    std::string pos_file = "/home/androposh/CLionProjects/RepeatScout/poses.txt";
-
-
+bool read_repeat_pos_from_file(const std::string& pos_file, std::vector<size_t>& poses) {
     std::ifstream fs2(pos_file);
     if (!fs2.is_open()) {
         std::cerr << "Unable to open file: " << pos_file << std::endl;
-        return 1; // return an error code
+        return false; // return an error code
     }
 
     size_t x;
@@ -47,15 +29,48 @@ int main() {
         poses.push_back(x);
         fs2 >> s;
     }
-/*
-    for(auto pos: poses) {
-        std::vector<genome_token> rp(genome.begin()+pos, genome.begin()+ pos + 10);
-        for(auto xx:rp){
-            std::cout << xx.c;
+
+
+    /*
+        for(auto pos: poses) {
+            std::vector<genome_token> rp(genome.begin()+pos, genome.begin()+ pos + 10);
+            for(auto xx:rp){
+                std::cout << xx.c;
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
+        */
+
+    return true;
+
+}
+
+int main() {
+    std::ofstream outFile("aboba.txt");
+    //std::cout.rdbuf(outFile.rdbuf());
+    std::iostream::sync_with_stdio(false);
+    config c;
+    c.max_offset = 5;
+    c.gap_penalty = -5;
+    c.cap_penalty = -10;
+    c.match = 1;
+    c.mismatch = -2;
+    c.max_extend_len = 5000;
+
+    std::vector<genome_token> genome;
+    bool genome_read_res = read_genome_from_file("/home/androposh/CLionProjects/RepeatScout/humanFormattedUppercase.fa", genome);
+    if(!genome_read_res) {
+        std::cout << "Eror";
+        return 0;
     }
-    */
+
+    std::vector<size_t> poses;
+
+    bool read_pos_from_file_res = read_repeat_pos_from_file("/home/androposh/CLionProjects/RepeatScout/poses.txt", poses);
+    if(!read_pos_from_file_res) {
+        std::cout << "Eror";
+        return 0;
+    }
 
 //ACCAGCCTGGCC
     repeat_scout rs(12, c, genome, poses);
