@@ -2,7 +2,7 @@
 #include "repeat_scout.h"
 #include <fstream>
 
-bool read_genome_from_file(const std::string& genome_file, std::vector<genome_token>& genome) {
+bool read_genome_from_file(const std::string& genome_file, std::vector<genome_token>& genome) { //file format - one token in line
     std::ifstream fs(genome_file);
 
     if (!fs.is_open()) {
@@ -10,8 +10,14 @@ bool read_genome_from_file(const std::string& genome_file, std::vector<genome_to
         return false;
     }
 
-    genome = std::vector<genome_token> ((std::istreambuf_iterator<char>(fs)),
-                                     (std::istreambuf_iterator<char>()));
+    std::string line;
+    while (std::getline(fs, line)) {
+        genome.emplace_back(line);
+    }
+
+
+    //genome = std::vector<genome_token> ((std::istreambuf_iterator<char>(fs)),
+    //                                 (std::istreambuf_iterator<char>()));
 
     return true;
 }
@@ -91,7 +97,7 @@ int main() {
     std::cout << "Printing Q and seqs\n";
     std::cout << std::string(max_left_extention_len-(rs.left_q.size()-rs.exact_repeat_size), ' ');
     for(auto e:total_q) {
-        std::cout << e.c;
+        std::cout << e.to_string();
     }
     std::cout << '\n';
 
@@ -109,7 +115,7 @@ int main() {
         std::cout << std::string(space_cnt, ' ');
 
         for(auto p=rs.best_left_border[n];p<=rs.best_right_border[n];p++) {
-            std::cout << rs.genome[p].c;
+            std::cout << rs.genome[p].to_string();
         }
         std::cout << '\n';
     }
