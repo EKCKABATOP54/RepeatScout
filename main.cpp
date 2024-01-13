@@ -47,20 +47,20 @@ bool read_repeat_pos_from_file(const std::string& pos_file, std::vector<size_t>&
 
 int main() {
     std::ofstream outFile("aboba.txt");
-    //std::cout.rdbuf(outFile.rdbuf());
-    std::iostream::sync_with_stdio(false);
+    std::cout.rdbuf(outFile.rdbuf());
+    //std::iostream::sync_with_stdio(false);
     config c;
-    c.max_offset = 5;
+    c.max_offset = 20;
     c.gap_penalty = -5;
-    c.cap_penalty = -10;
+    c.cap_penalty = -20;
     c.match = 1;
-    c.mismatch = -2;
+    c.mismatch = -1;
     c.max_extend_len = 5000;
 
     std::vector<genome_token> genome;
     bool genome_read_res = read_genome_from_file("/home/androposh/CLionProjects/RepeatScout/humanFormattedUppercase.fa", genome);
     if(!genome_read_res) {
-        std::cout << "Eror";
+        std::cout << "Error";
         return 0;
     }
 
@@ -68,7 +68,7 @@ int main() {
 
     bool read_pos_from_file_res = read_repeat_pos_from_file("/home/androposh/CLionProjects/RepeatScout/poses.txt", poses);
     if(!read_pos_from_file_res) {
-        std::cout << "Eror";
+        std::cout << "Error";
         return 0;
     }
 
