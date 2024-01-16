@@ -54,8 +54,19 @@ public:
         return token_value < other.token_value;
     }
 
-    std::string to_string() {
+    [[nodiscard]] std::string to_string() const {
         return {token_value.begin(), token_value.end()};
+    }
+
+    [[nodiscard]] size_t size() const{
+        return token_value.size();
+    }
+
+    std::pair<genome_token, genome_token> split(size_t pos) {
+        genome_token t1(std::string(token_value.begin(),token_value.begin()+ pos));
+        genome_token t2(std::string(token_value.begin() + pos,token_value.end()));
+
+        return {t1, t2};
     }
 
     static std::vector<genome_token>& get_all_tokens() {

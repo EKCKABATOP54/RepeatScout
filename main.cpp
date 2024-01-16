@@ -51,6 +51,54 @@ bool read_repeat_pos_from_file(const std::string& pos_file, std::vector<size_t>&
 
 }
 
+
+void build_repeat_pos(const std::string& repeat, std::vector<genome_token>& genome_tokens, std::vector<size_t> &repeat_poses_tok) { //can split some tokens, to align repeat with beggining of token
+    //WARNING: not efficient version
+    std::string whole_genome;
+    for(const auto&tok :genome_tokens) {
+        whole_genome += tok.to_string();
+    }
+    std::vector<size_t> positions;
+
+    size_t pos = whole_genome.find(repeat, 0);
+    while (pos != std::string::npos) {
+        positions.push_back(pos);
+        pos = whole_genome.find(repeat, pos + 1);
+    }
+    size_t tokens_total_size = 0;
+    size_t current_repeat_ind = 0;
+    std::vector<genome_token> genome_tokens_res;
+    for(size_t token_ind =0 ;token_ind < genome_tokens.size();) {
+        if(tokens_total_size + genome_tokens[token_ind].size() < positions[current_repeat_ind]) {
+            genome_tokens_res.push_back(genome_tokens[token_ind]);
+            token_ind++;
+            tokens_total_size+=genome_tokens[token_ind].size();
+        }
+        else if(tokens_total_size== positions[current_repeat_ind]) {
+            auto [tok1, tok2 ] = genome_tokens[token_ind].split(repeat.size());
+
+            repeat_poses_tok.push_back(token_ind);
+            genome_tokens.push_back(tok1);
+            current_repeat_ind++;
+            tokens_total_size+=tok1.size();
+
+            if(tok2.size()==0) {
+                token_ind++;
+           }
+            else {
+                genome_tokens[token_ind] = tok2;
+            }
+
+        }
+        else {
+            auto [tok1, tok2 ] = genome_tokens[token_ind].split(positions[current_repeat_ind]-tokens_total_size);
+            genome_tokens_res.push_back(tok1);
+            tokens_total_size+=tok1.size();
+        }
+    }
+
+}
+
 int main() {
     std::ofstream outFile("aboba.txt");
     //std::cout.rdbuf(outFile.rdbuf());
@@ -66,17 +114,21 @@ int main() {
     std::vector<genome_token> genome;
     bool genome_read_res = read_genome_from_file("/home/androposh/CLionProjects/RepeatScout/humanFormattedUppercase.fa", genome);
     if(!genome_read_res) {
-        std::cout << "Eror";
+        std::cout << "Error";
         return 0;
     }
 
     std::vector<size_t> poses;
 
+
     bool read_pos_from_file_res = read_repeat_pos_from_file("/home/androposh/CLionProjects/RepeatScout/poses.txt", poses);
     if(!read_pos_from_file_res) {
-        std::cout << "Eror";
+        std::cout << "Error";
         return 0;
     }
+
+    build_repeat_pos("f", genome, poses);
+
 
 //ACCAGCCTGGCC
     repeat_scout rs(12, c, genome, poses);
