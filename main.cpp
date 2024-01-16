@@ -49,16 +49,19 @@ int main() {
     std::ofstream outFile("aboba.txt");
     std::cout.rdbuf(outFile.rdbuf());
     //std::iostream::sync_with_stdio(false);
+    std::cout << "Starting..." << std::endl;
     config c;
-    c.max_offset = 20;
+    c.max_offset = 5;
     c.gap_penalty = -5;
     c.cap_penalty = -20;
     c.match = 1;
     c.mismatch = -1;
-    c.max_extend_len = 5000;
+    c.max_extend_len = 2500;
 
     std::vector<genome_token> genome;
-    bool genome_read_res = read_genome_from_file("/home/androposh/CLionProjects/RepeatScout/humanFormattedUppercase.fa", genome);
+    //bool genome_read_res = read_genome_from_file("/home/androposh/CLionProjects/RepeatScout/humanFormattedUppercase.fa", genome);
+    //bool genome_read_res = read_genome_from_file("/home/androposh/bioserver/tests/RepeatScout/GCF_000002985.6_WBcel235_genomic.fna_modified", genome);
+    bool genome_read_res = read_genome_from_file("/home/androposh/CLionProjects/RepeatScout/GCF_000002985.6_WBcel235_genomic.fna_modified", genome);
     if(!genome_read_res) {
         std::cout << "Error";
         return 0;
@@ -66,14 +69,17 @@ int main() {
 
     std::vector<size_t> poses;
 
-    bool read_pos_from_file_res = read_repeat_pos_from_file("/home/androposh/CLionProjects/RepeatScout/poses.txt", poses);
+    //bool read_pos_from_file_res = read_repeat_pos_from_file("/home/androposh/CLionProjects/RepeatScout/poses.txt", poses);
+    bool read_pos_from_file_res = read_repeat_pos_from_file("/home/androposh/bioserver/tests/RepeatScout/poses.txt", poses);
     if(!read_pos_from_file_res) {
         std::cout << "Error";
         return 0;
     }
 
+    std::cout << "Files read" << std::endl;
 //ACCAGCCTGGCC
-    repeat_scout rs(12, c, genome, poses);
+    //AAATTCAAGATAAAT
+    repeat_scout rs(15, c, genome, poses);
     rs.extend_right();
     rs.extend_left();
 
