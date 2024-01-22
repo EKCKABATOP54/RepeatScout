@@ -6,9 +6,10 @@
 #include <algorithm>
 #include <iostream>
 #include <sys/types.h>
+#include <fstream>
 #include <functional>
 #include <map>
-
+#include <set>
 
 struct config {
     int64_t max_offset;
@@ -23,7 +24,7 @@ class genome_token {
 public:
 
     explicit genome_token(const std::string&v) : token_value(v.begin(), v.end()) {
-
+        token_value.shrink_to_fit();
     }
 
     //TODO: remove distance parametrs, because it has no sense with cache
@@ -46,8 +47,8 @@ public:
             }
         }
 
-        cache[{*this, t}] = dp[n][m];
-        return dp[n][m];
+        cache[{*this, t}] = dp[m][n];
+        return dp[m][n];
     }
 
     bool operator<(const genome_token& other) const {
@@ -62,7 +63,10 @@ public:
         return token_value.size();
     }
 
-    std::pair<genome_token, genome_token> split(size_t pos) {
+    [[nodiscard]] std::pair<genome_token, genome_token> split (const size_t pos) const {
+        if(pos>=token_value.size()) {
+            return {genome_token(std::string(token_value.begin(),token_value.end())), genome_token("")};
+        }
         genome_token t1(std::string(token_value.begin(),token_value.begin()+ pos));
         genome_token t2(std::string(token_value.begin() + pos,token_value.end()));
 
@@ -72,6 +76,35 @@ public:
     static std::vector<genome_token>& get_all_tokens() {
         return all_tokens_;
     }
+
+    static void read_all_tokens_from_file(const std::string& filename) {
+        std::ifstream ifile(filename);
+        if(!ifile.is_open()) {
+           std::cout << "Error reading tokens" << std::endl;
+            std::exit(1);
+        }
+        std::string tok;
+        std::set<std::string> st;
+        while(std::getline(ifile, tok)) {
+            st.insert(tok);
+        }
+        for(const auto& s: st) {
+            all_tokens_.emplace_back(s);
+        }
+    }
+
+    template <typename Container>
+    static  void read_all_tokens(const Container&tokens) {
+        std::set<genome_token> st;
+        for(const auto& tok: tokens) {
+            st.insert(tok);
+        }
+        for(const auto& s: st) {
+            all_tokens_.emplace_back(s);
+        }
+    }
+
+
 private:
     std::vector<char> token_value; //std::string?
     static std::map<std::pair<genome_token, genome_token>, int64_t> cache;
@@ -211,7 +244,7 @@ struct repeat_scout {
         int64_t max_g = g[n][(y + 1) % 2][offset + conf.max_offset] + new_token.calc_mu(
                             genome[exact_repeat_pos[n] + exact_repeat_size + y - offset], conf.match, conf.mismatch, conf.gap_penalty);
 
-        for (int64_t k = 0; offset + k <= conf.max_offset; k++) {
+        for (int64_t k = 1; offset + k <= conf.max_offset; k++) {
             //k in range [1; b - offset]
             max_g = std::max(
                 max_g, g[n][(y + 1) % 2][offset + k + conf.max_offset] + k * conf.gap_penalty + new_token.calc_mu(
